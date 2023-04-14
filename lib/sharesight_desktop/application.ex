@@ -10,6 +10,7 @@ defmodule SharesightDesktop.Application do
     children = [
       # Starts a worker by calling: SharesightDesktop.Worker.start_link(arg)
       # {SharesightDesktop.Worker, arg}
+      SharesightDesktop.Server
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

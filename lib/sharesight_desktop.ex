@@ -1,18 +1,26 @@
 defmodule SharesightDesktop do
-  @moduledoc """
-  Documentation for `SharesightDesktop`.
-  """
+  @behaviour :wx_object
 
-  @doc """
-  Hello world.
+  @title "Sharesight Desktop"
+  @size {600, 600}
 
-  ## Examples
+  def start_link() do
+    :wx_object.start_link(__MODULE__, [], [])
+  end
 
-      iex> SharesightDesktop.hello()
-      :world
+  def init(_args \\ []) do
+    wx = :wx.new()
+    frame = :wxFrame.new(wx, -1, @title, size: @size)
+    :wxFrame.connect(frame, :close_window)
 
-  """
-  def hello do
-    :world
+    :wxFrame.show(frame)
+
+    state = %{frame: frame}
+
+    {frame, state}
+  end
+
+  def handle_event({:wx, _, _, _, {:wxClose, :close_window}}, state) do
+    {:stop, :normal, state}
   end
 end
