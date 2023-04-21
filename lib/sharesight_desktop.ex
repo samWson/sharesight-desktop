@@ -10,7 +10,9 @@ defmodule SharesightDesktop do
 
   def init(_args \\ []) do
     wx = :wx.new()
-    frame = :wxFrame.new(wx, -1, @title, size: @size)
+
+    frame_id = next_id_number()
+    frame = :wxFrame.new(wx, frame_id, @title, size: @size)
     :wxFrame.connect(frame, :close_window)
 
     :wxFrame.show(frame)
@@ -22,5 +24,9 @@ defmodule SharesightDesktop do
 
   def handle_event({:wx, _, _, _, {:wxClose, :close_window}}, state) do
     {:stop, :normal, state}
+  end
+
+  defp next_id_number() do
+    System.unique_integer([:positive, :monotonic])
   end
 end
