@@ -10,7 +10,7 @@ defmodule SharesightDesktop.Server do
   end
 
   @impl GenServer
-  def handle_info({:DOWN, _, _, _, _}, state) do
+  def handle_info({:DOWN, _, _, _, _}, _state) do
     System.stop(0)
 
     {:stop, :ignore, nil}
