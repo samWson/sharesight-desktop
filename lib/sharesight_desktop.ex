@@ -39,6 +39,8 @@ defmodule SharesightDesktop do
 
     :wxFrame.show(frame)
 
+    HTTPoison.start()
+
     state = %{frame: frame, url_text: url_text, body_text: body_text}
 
     {frame, state}
@@ -60,9 +62,11 @@ defmodule SharesightDesktop do
       ) do
     url = :wxTextCtrl.getLineText(state.url_text, 0)
 
+    %HTTPoison.Response{body: body} = HTTPoison.get!(url)
+
     :wxTextCtrl.clear(state.body_text)
     :wxTextCtrl.setInsertionPoint(state.body_text, 0)
-    :wxTextCtrl.writeText(state.body_text, url)
+    :wxTextCtrl.writeText(state.body_text, body)
 
     {:noreply, state}
   end
