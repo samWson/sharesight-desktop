@@ -1,4 +1,6 @@
-# SharesightDesktop
+# Sharesight Desktop
+
+An experimental desktop client for [Sharesight](https://www.sharesight.com/) made with Elixir and wxWidgets.
 
 This repository is open source software under the 3-Clause BSD license. Check
 the LICENSE file for detail.
