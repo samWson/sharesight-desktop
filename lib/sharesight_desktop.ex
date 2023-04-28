@@ -27,12 +27,14 @@ defmodule SharesightDesktop do
     :wxButton.connect(button, :command_button_clicked)
 
     body_text_id = next_id_number()
-    body_text = :wxTextCtrl.new(
-      panel,
-      body_text_id,
-      pos: {0, 64},
-      style: @multiline,
-      size: {400, 400}
+
+    body_text =
+      :wxTextCtrl.new(
+        panel,
+        body_text_id,
+        pos: {0, 64},
+        style: @multiline,
+        size: {400, 400}
       )
 
     :wxFrame.show(frame)
@@ -47,14 +49,15 @@ defmodule SharesightDesktop do
   end
 
   def handle_event(
-    {
-      :wx,
-      _,
-      {:wx_ref, _, :wxButton, _},
-      _,
-      {:wxCommand, :command_button_clicked, _, _, _}
-    },
-    state) do
+        {
+          :wx,
+          _,
+          {:wx_ref, _, :wxButton, _},
+          _,
+          {:wxCommand, :command_button_clicked, _, _, _}
+        },
+        state
+      ) do
     url = :wxTextCtrl.getLineText(state.url_text, 0)
 
     :wxTextCtrl.clear(state.body_text)
