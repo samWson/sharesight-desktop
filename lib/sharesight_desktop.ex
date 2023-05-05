@@ -39,7 +39,7 @@ defmodule SharesightDesktop do
 
     :wxFrame.show(frame)
 
-    HTTPoison.start()
+    SharesightDesktop.ApiClient.start()
 
     state = %{frame: frame, url_text: url_text, body_text: body_text}
 
@@ -62,7 +62,8 @@ defmodule SharesightDesktop do
       ) do
     url = :wxTextCtrl.getLineText(state.url_text, 0)
 
-    %HTTPoison.Response{body: body} = HTTPoison.get!(url)
+    body = SharesightDesktop.ApiClient.get!(url)
+    |> SharesightDesktop.ApiClient.body()
 
     :wxTextCtrl.clear(state.body_text)
     :wxTextCtrl.setInsertionPoint(state.body_text, 0)

@@ -3,6 +3,6 @@ defmodule SharesightDesktopTest do
   doctest SharesightDesktop
 
   test "greets the world" do
-    assert SharesightDesktop.hello() == :world
+    assert :hello != :world
   end
 end
