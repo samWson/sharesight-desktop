@@ -1,4 +1,6 @@
 defmodule SharesightDesktop do
+  import Logger, only: [info: 2, warning: 2]
+
   @behaviour :wx_object
 
   @button_label "GET"
@@ -21,6 +23,7 @@ defmodule SharesightDesktop do
 
     url_text_id = next_id_number()
     url_text = :wxTextCtrl.new(panel, url_text_id, size: {300, -1})
+    :wxWindow.setFocus(url_text)
 
     button_id = next_id_number()
     button = :wxButton.new(panel, button_id, label: @button_label, pos: {0, 32})
@@ -41,7 +44,21 @@ defmodule SharesightDesktop do
 
     SharesightDesktop.ApiClient.start()
 
-    state = %{frame: frame, url_text: url_text, body_text: body_text}
+    access_token = case SharesightDesktop.ApiClient.get_access_token() do
+      {:ok, token} ->
+        Logger.info("Access token retrieved")
+        token
+      {:error, reason} ->
+        Logger.warning("Access token not retrieved: #{reason}")
+        ""
+    end
+
+    state = %{
+      frame: frame,
+      url_text: url_text,
+      body_text: body_text,
+      access_token: access_token
+    }
 
     {frame, state}
   end
@@ -60,9 +77,12 @@ defmodule SharesightDesktop do
         },
         state
       ) do
-    url = :wxTextCtrl.getLineText(state.url_text, 0)
 
-    body = SharesightDesktop.ApiClient.get!(url)
+    url = :wxTextCtrl.getLineText(state.url_text, 0)
+    |> List.to_string()
+    |> String.trim()
+
+    body = SharesightDesktop.ApiClient.get(url)
     |> SharesightDesktop.ApiClient.body()
 
     :wxTextCtrl.clear(state.body_text)

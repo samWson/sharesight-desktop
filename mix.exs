@@ -22,7 +22,8 @@ defmodule SharesightDesktop.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:httpoison, "~> 2.0"}
+      {:httpoison, "~> 2.0"},
+      {:oauth2, "~> 2.1"}
     ]
   end
 end
