@@ -44,7 +44,7 @@ defmodule SharesightDesktop do
 
     SharesightDesktop.ApiClient.start()
 
-    access_token = case SharesightDesktop.ApiClient.get_access_token() do
+    access_token = case SharesightDesktop.ApiClient.get_access_token!() do
       {:ok, token} ->
         Logger.info("Access token retrieved")
         token
@@ -82,7 +82,7 @@ defmodule SharesightDesktop do
     |> List.to_string()
     |> String.trim()
 
-    body = SharesightDesktop.ApiClient.get(url)
+    body = SharesightDesktop.ApiClient.get(url, state.access_token)
     |> SharesightDesktop.ApiClient.body()
 
     :wxTextCtrl.clear(state.body_text)

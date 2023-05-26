@@ -9,14 +9,14 @@ defmodule SharesightDesktop.ApiClient do
   end
 
   @impl true
-  def get(url) do
+  def get(url, access_token) do
     headers = [
       {:content_type, "application/json"},
-      {:authorization, "Bearer <token>"} # TODO: need to provide access token here.
+      {:authorization, "Bearer #{access_token}"}
     ]
 
     Logger.info("Sending GET to #{url}")
-    {:ok, response} = HTTPoison.get(url)
+    {:ok, response} = HTTPoison.get(url, headers)
 
     Logger.info("Recieved response status #{response.status_code}")
     response
@@ -26,7 +26,7 @@ defmodule SharesightDesktop.ApiClient do
     body
   end
 
-  def get_access_token() do
+  def get_access_token!() do
     client_uid = System.get_env("CLIENT_UID", "")
     client_secret = System.get_env("CLIENT_SECRET", "")
 
@@ -48,7 +48,11 @@ defmodule SharesightDesktop.ApiClient do
 
     case OAuth2.Client.get_token(oauth_client) do
       {:ok, client_with_token} ->
-        {:ok, client_with_token.token.access_token}
+        token = client_with_token.token.access_token
+        |> Jason.decode!()
+        |> Map.get("access_token")
+
+        {:ok, token}
       {:error, %OAuth2.Response{body: body}} ->
         {:error, "Bad response: #{IO.inspect(body)}"}
       {:error, %OAuth2.Error{reason: reason}} ->

@@ -23,6 +23,7 @@ defmodule SharesightDesktop.MixProject do
   defp deps do
     [
       {:httpoison, "~> 2.0"},
+      {:jason, "~> 1.4"},
       {:oauth2, "~> 2.1"}
     ]
   end
