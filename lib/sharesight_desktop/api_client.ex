@@ -1,5 +1,5 @@
 defmodule SharesightDesktop.ApiClient do
-  import Logger, only: [info: 2]
+  import Logger, only: [info: 2, warning: 2]
 
   use HTTPoison.Base
 
@@ -27,8 +27,8 @@ defmodule SharesightDesktop.ApiClient do
   end
 
   def get_access_token!() do
-    client_uid = System.get_env("CLIENT_UID", "")
-    client_secret = System.get_env("CLIENT_SECRET", "")
+    client_uid = fetch_client_variable("CLIENT_UID")
+    client_secret = fetch_client_variable("CLIENT_SECRET")
 
     # TODO: These three urls should be configurable.
     domain = "https://api.sharesight.com"
@@ -57,6 +57,16 @@ defmodule SharesightDesktop.ApiClient do
         {:error, "Bad response: #{IO.inspect(body)}"}
       {:error, %OAuth2.Error{reason: reason}} ->
         {:error, "Error: #{reason}"}
+    end
+  end
+
+  defp fetch_client_variable(name) do
+    case System.fetch_env(name) do
+      {:ok, variable} ->
+        variable
+      :error ->
+        Logger.warning("#{name} not fetched from environment")
+        ""
     end
   end
 end
