@@ -7,6 +7,8 @@ defmodule SharesightDesktop do
   @multiline 0x0020 # wxTE_MULTILINE
   @size {600, 600}
   @title "Sharesight Desktop"
+  @wxVertical 0x0008
+  @wxAll 0xf0
 
   def start_link() do
     :wx_object.start_link(__MODULE__, [], [])
@@ -14,6 +16,12 @@ defmodule SharesightDesktop do
 
   def init(_args \\ []) do
     wx = :wx.new()
+
+    sizer = :wxBoxSizer.new(@wxVertical)
+
+    sizer_flags = :wxSizerFlags.new()
+    :wxSizerFlags.center(sizer_flags)
+    :wxSizerFlags.border(sizer_flags, @wxAll, 5)
 
     frame_id = next_id_number()
     frame = :wxFrame.new(wx, frame_id, @title, size: @size)
@@ -26,7 +34,7 @@ defmodule SharesightDesktop do
     :wxWindow.setFocus(url_text)
 
     button_id = next_id_number()
-    button = :wxButton.new(panel, button_id, label: @button_label, pos: {0, 32})
+    button = :wxButton.new(panel, button_id, label: @button_label)
     :wxButton.connect(button, :command_button_clicked)
 
     body_text_id = next_id_number()
@@ -39,6 +47,14 @@ defmodule SharesightDesktop do
         style: @multiline,
         size: {400, 400}
       )
+
+    Enum.each([url_text, button, body_text], fn window ->
+      :wxSizer.add(sizer, window, sizer_flags)
+    end)
+
+    :wxWindow.setSizer(panel, sizer)
+
+    :wxSizer.setSizeHints(sizer, frame)
 
     :wxFrame.show(frame)
 
