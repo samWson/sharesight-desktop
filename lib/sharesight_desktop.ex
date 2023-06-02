@@ -7,8 +7,9 @@ defmodule SharesightDesktop do
   @multiline 0x0020 # wxTE_MULTILINE
   @size {600, 600}
   @title "Sharesight Desktop"
-  @wxVertical 0x0008
   @wxAll 0xf0
+  @wxLC_REPORT 0x0020
+  @wxVERTICAL 0x0008
 
   def start_link() do
     :wx_object.start_link(__MODULE__, [], [])
@@ -17,7 +18,7 @@ defmodule SharesightDesktop do
   def init(_args \\ []) do
     wx = :wx.new()
 
-    sizer = :wxBoxSizer.new(@wxVertical)
+    sizer = :wxBoxSizer.new(@wxVERTICAL)
 
     sizer_flags = :wxSizerFlags.new()
     :wxSizerFlags.center(sizer_flags)
@@ -48,7 +49,25 @@ defmodule SharesightDesktop do
         size: {400, 400}
       )
 
-    Enum.each([url_text, button, body_text], fn window ->
+    table_id = next_id_number()
+    table = :wxListCtrl.new(panel, winid: table_id, style: @wxLC_REPORT)
+    headers = [
+      "Code",
+      "Price",
+      "Quantity",
+      "Value",
+      "Capital Gains",
+      "Dividends",
+      "Currency",
+      "Return"
+    ]
+
+    Enum.reduce(headers, 0, fn header, index ->
+      :wxListCtrl.insertColumn(table, index, header)
+      index + 1
+    end)
+
+    Enum.each([url_text, button, body_text, table], fn window ->
       :wxSizer.add(sizer, window, sizer_flags)
     end)
 
@@ -73,7 +92,8 @@ defmodule SharesightDesktop do
       frame: frame,
       url_text: url_text,
       body_text: body_text,
-      access_token: access_token
+      access_token: access_token,
+      table: table
     }
 
     {frame, state}
