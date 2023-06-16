@@ -125,6 +125,52 @@ defmodule SharesightDesktop do
     :wxTextCtrl.setInsertionPoint(state.body_text, 0)
     :wxTextCtrl.writeText(state.body_text, body)
 
+    {:ok, response} = Jason.decode(body)
+    holdings = response["report"]["holdings"]
+
+    {records, _last_index} = Enum.map_reduce(holdings, 0, fn holding, index ->
+      list_item = :wxListItem.new()
+      :wxListItem.setId(list_item, index)
+
+      instrument = Map.get(holding, "instrument")
+
+      code = "#{instrument["code"]}.#{instrument["name"]}"
+      price = "#{holding["instrument_price"]}"
+      quantity = "#{holding["quantity"]}"
+      value = "#{holding["value"]}"
+      capital_gain = "#{holding["capital_gain"]}"
+      dividends = "#{holding["payout_gain"]}"
+      currency = "#{holding["currency_gain"]}"
+      return = "#{holding["total_gain"]}"
+
+      item = %{
+        index: index,
+        list_item: list_item,
+        code: code,
+        price: price,
+        quantity: quantity,
+        value: value,
+        capital_gain: capital_gain,
+        dividends: dividends,
+        currency: currency,
+        return: return
+      }
+
+      {item, index + 1}
+    end)
+
+    Enum.each(records, fn record ->
+      :wxListCtrl.insertItem(state.table, record[:list_item])
+      :wxListCtrl.setItem(state.table, record[:index], 0, record[:code]) # 0 - 'Code' index
+      :wxListCtrl.setItem(state.table, record[:index], 1, record[:price])
+      :wxListCtrl.setItem(state.table, record[:index], 2, record[:quantity])
+      :wxListCtrl.setItem(state.table, record[:index], 3, record[:value])
+      :wxListCtrl.setItem(state.table, record[:index], 4, record[:capital_gain])
+      :wxListCtrl.setItem(state.table, record[:index], 5, record[:dividends])
+      :wxListCtrl.setItem(state.table, record[:index], 6, record[:currency])
+      :wxListCtrl.setItem(state.table, record[:index], 7, record[:return])
+    end)
+
     {:noreply, state}
   end
 
