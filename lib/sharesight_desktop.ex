@@ -3,8 +3,6 @@ defmodule SharesightDesktop do
 
   @behaviour :wx_object
 
-  @button_label "GET"
-  @multiline 0x0020 # wxTE_MULTILINE
   @size {600, 600}
   @title "Sharesight Desktop"
   @wxAll 0xf0
@@ -30,25 +28,6 @@ defmodule SharesightDesktop do
 
     panel = :wxPanel.new(frame)
 
-    url_text_id = next_id_number()
-    url_text = :wxTextCtrl.new(panel, url_text_id, size: {300, -1})
-    :wxWindow.setFocus(url_text)
-
-    button_id = next_id_number()
-    button = :wxButton.new(panel, button_id, label: @button_label)
-    :wxButton.connect(button, :command_button_clicked)
-
-    body_text_id = next_id_number()
-
-    body_text =
-      :wxTextCtrl.new(
-        panel,
-        body_text_id,
-        pos: {0, 64},
-        style: @multiline,
-        size: {400, 400}
-      )
-
     table_id = next_id_number()
     table = :wxListCtrl.new(panel, winid: table_id, style: @wxLC_REPORT)
     headers = [
@@ -67,9 +46,7 @@ defmodule SharesightDesktop do
       index + 1
     end)
 
-    Enum.each([url_text, button, body_text, table], fn window ->
-      :wxSizer.add(sizer, window, sizer_flags)
-    end)
+    :wxSizer.add(sizer, table, sizer_flags)
 
     :wxWindow.setSizer(panel, sizer)
 
@@ -90,11 +67,11 @@ defmodule SharesightDesktop do
 
     state = %{
       frame: frame,
-      url_text: url_text,
-      body_text: body_text,
       access_token: access_token,
       table: table
     }
+
+    show_performance_report(state)
 
     {frame, state}
   end
@@ -103,27 +80,16 @@ defmodule SharesightDesktop do
     {:stop, :normal, state}
   end
 
-  def handle_event(
-        {
-          :wx,
-          _,
-          {:wx_ref, _, :wxButton, _},
-          _,
-          {:wxCommand, :command_button_clicked, _, _, _}
-        },
-        state
-      ) do
+  defp next_id_number() do
+    System.unique_integer([:positive, :monotonic])
+  end
 
-    url = :wxTextCtrl.getLineText(state.url_text, 0)
-    |> List.to_string()
-    |> String.trim()
+  defp show_performance_report(state) do
+    {:ok, url} = fetch_api_url_variable()
+    |> URI.new()
 
     body = SharesightDesktop.ApiClient.get(url, state.access_token)
     |> SharesightDesktop.ApiClient.body()
-
-    :wxTextCtrl.clear(state.body_text)
-    :wxTextCtrl.setInsertionPoint(state.body_text, 0)
-    :wxTextCtrl.writeText(state.body_text, body)
 
     {:ok, response} = Jason.decode(body)
     holdings = response["report"]["holdings"]
@@ -170,11 +136,15 @@ defmodule SharesightDesktop do
       :wxListCtrl.setItem(state.table, record[:index], 6, record[:currency])
       :wxListCtrl.setItem(state.table, record[:index], 7, record[:return])
     end)
-
-    {:noreply, state}
   end
 
-  defp next_id_number() do
-    System.unique_integer([:positive, :monotonic])
+  defp fetch_api_url_variable do
+    case System.fetch_env("API_URL") do
+      {:ok, variable} ->
+        variable
+      :error ->
+        Logger.warning("API_URL not fetched from the environment")
+        ""
+    end
   end
 end
