@@ -8,6 +8,7 @@ defmodule SharesightDesktop do
   @wxAll 0xf0
   @wxLC_REPORT 0x0020
   @wxVERTICAL 0x0008
+  @wxID_ANY -1
 
   def start_link() do
     :wx_object.start_link(__MODULE__, [], [])
@@ -27,6 +28,14 @@ defmodule SharesightDesktop do
     :wxFrame.connect(frame, :close_window)
 
     panel = :wxPanel.new(frame)
+
+    menu_bar = :wxMenuBar.new()
+    menu = :wxMenu.new()
+    :wxMenuBar.append(menu_bar, menu, "Network")
+    :wxMenu.append(menu, @wxID_ANY, "Refresh")
+    :wxEvtHandler.connect(menu, :command_menu_selected)
+
+    :wxFrame.setMenuBar(frame, menu_bar)
 
     table_id = next_id_number()
     table = :wxListCtrl.new(panel, winid: table_id, style: @wxLC_REPORT)
@@ -80,6 +89,14 @@ defmodule SharesightDesktop do
     {:stop, :normal, state}
   end
 
+  def handle_event({:wx, _, {:wx_ref, _id, :wxMenu, _}, _, {:wxCommand, :command_menu_selected, _, _, _index}}, state) do
+    # _index param is possibly the index of the :wxMenuItem in the menu.
+
+    show_performance_report(state)
+
+    {:noreply, state}
+  end
+
   defp next_id_number() do
     System.unique_integer([:positive, :monotonic])
   end
@@ -88,10 +105,27 @@ defmodule SharesightDesktop do
     {:ok, url} = fetch_api_url_variable()
     |> URI.new()
 
-    body = SharesightDesktop.ApiClient.get(url, state.access_token)
-    |> SharesightDesktop.ApiClient.body()
+    case SharesightDesktop.ApiClient.get(url, state.access_token) do
+      {:ok, response} ->
+        parse_performance_report(response)
+        |> fill_performance_report_widget(state)
 
-    {:ok, response} = Jason.decode(body)
+      :error ->
+        nil # Do nothing. Just finish loading the GUI.
+    end
+  end
+
+  defp fetch_api_url_variable do
+    case System.fetch_env("API_URL") do
+      {:ok, variable} ->
+        variable
+      :error ->
+        Logger.warning("API_URL not fetched from the environment")
+        ""
+    end
+  end
+
+  defp parse_performance_report(response) do
     holdings = response["report"]["holdings"]
 
     {records, _last_index} = Enum.map_reduce(holdings, 0, fn holding, index ->
@@ -125,6 +159,10 @@ defmodule SharesightDesktop do
       {item, index + 1}
     end)
 
+    records
+  end
+
+  defp fill_performance_report_widget(records, state) do
     Enum.each(records, fn record ->
       :wxListCtrl.insertItem(state.table, record[:list_item])
       :wxListCtrl.setItem(state.table, record[:index], 0, record[:code]) # 0 - 'Code' index
@@ -136,15 +174,5 @@ defmodule SharesightDesktop do
       :wxListCtrl.setItem(state.table, record[:index], 6, record[:currency])
       :wxListCtrl.setItem(state.table, record[:index], 7, record[:return])
     end)
-  end
-
-  defp fetch_api_url_variable do
-    case System.fetch_env("API_URL") do
-      {:ok, variable} ->
-        variable
-      :error ->
-        Logger.warning("API_URL not fetched from the environment")
-        ""
-    end
   end
 end

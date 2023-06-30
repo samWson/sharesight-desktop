@@ -9,6 +9,13 @@ defmodule SharesightDesktop.ApiClient do
   end
 
   @impl true
+  def get(%URI{path: nil}, _access_token) do
+    Logger.error("GET not sent. Reason: URL path is nil")
+    :error
+  end
+
+  @impl true
+  @spec get(URI.t(), String.t()) :: {:ok, String.t()} | :error
   def get(url, access_token) do
     headers = [
       {:content_type, "application/json"},
@@ -16,10 +23,15 @@ defmodule SharesightDesktop.ApiClient do
     ]
 
     Logger.info("Sending GET to #{url}")
-    {:ok, response} = HTTPoison.get(url, headers)
+    case HTTPoison.get(url, headers) do
+      {:ok, response} ->
+        Logger.info("Recieved response status #{response.status_code}")
+        Jason.decode(body(response))
 
-    Logger.info("Recieved response status #{response.status_code}")
-    response
+      {:error, error} ->
+        Logger.error("GET to #{url} failed. Reason: #{error.reason}")
+        :error
+    end
   end
 
   def body(%HTTPoison.Response{body: body}) do
